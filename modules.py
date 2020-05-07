@@ -31,10 +31,8 @@ class TranslinkDataset(Dataset):
 
 # 519 for whole
 class GCModel(nn.Module):
-    def __init__(self,  mask_in, mask_out, stop_distribution, stop_number_location, c_conf_ST=(3, 2, 100, 100),
-                 c_conf_G=(3, 2, 389, 10), p_conf_ST=(3, 2, 100, 100), p_conf_G=(3, 2, 389, 10),
-                 t_conf_ST=(3, 2, 100, 100), t_conf_G=(3, 2, 389, 10), external_dim=11,
-                 nb_conv_unit=4, nb_residual_unit=3):
+    def __init__(self,  mask_in, mask_out, stop_distribution, stop_number_location, c_conf_G, external_dim=11,
+                nb_residual_unit=3):
         super(GCModel, self).__init__()
 
         # mask_in, mask_out, stop_distribution, stop_number_location
@@ -46,16 +44,17 @@ class GCModel(nn.Module):
         # initialize GNN part
         self.external_dim = external_dim
         self.c_conf_G = c_conf_G
-        self.p_conf_G = p_conf_G
-        self.t_conf_G = t_conf_G
+        self.p_conf_G = c_conf_G
+        self.t_conf_G = c_conf_G
 
-        self.nb_inputs_G = c_conf_G[0]
-        self.nb_flow_G, self.stop_nums_G, self.closest_stop_nums_G = c_conf_G[1], 389, c_conf_G[3]
+        self.nb_inputs_G = 3
+        self.nb_flow_G, self.stop_nums_G, self.closest_stop_nums_G = c_conf_G[1], c_conf_G[2], c_conf_G[3]
 
         self.relu = torch.relu
         self.tanh = torch.tanh
 
         self.lin_front = c_conf_G[2] - 2 - 2 - 2 - 2 - 1
+
 
         # Branch c
         self.c_way_G = self.make_one_way_G(in_channels=self.nb_inputs_G * self.nb_flow_G)
@@ -64,11 +63,11 @@ class GCModel(nn.Module):
 
         # initialize STCNN part
         self.nb_residual_unit = nb_residual_unit
-        self.c_conf_ST = c_conf_ST
-        self.p_conf_ST = p_conf_ST
-        self.t_conf_ST = t_conf_ST
+        self.c_conf_ST = (3, 2, 100, 100)
+        self.p_conf_ST = (3, 2, 100, 100)
+        self.t_conf_ST = (3, 2, 100, 100)
 
-        self.nb_flow_ST, self.map_height_ST, self.map_width_ST = c_conf_ST[1], c_conf_ST[2], c_conf_ST[3]
+        self.nb_flow_ST, self.map_height_ST, self.map_width_ST = self.c_conf_ST[1], self.c_conf_ST[2], self.c_conf_ST[3]
 
         self.c_way_ST = self.make_one_way_ST(in_channels=self.c_conf_ST[0] * self.nb_flow_ST)
         self.p_way_ST = self.make_one_way_ST(in_channels=self.p_conf_ST[0] * self.nb_flow_ST)
